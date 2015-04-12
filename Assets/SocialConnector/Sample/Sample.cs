@@ -10,6 +10,14 @@ public class Sample : MonoBehaviour
         }
     }
 
+    void Start()
+    {
+        SocialConnector.Callback += (completed, activityType, stringActivityType) => {
+            // ActivityTypeはユーザーが拡張できるので、判別できないものはstring形式で帰ってくる
+            Debug.LogFormat("SocialConnector.Callback activityType={0}, completed={1}", activityType, completed);
+        };
+    }
+
     void OnGUI()
     {
 

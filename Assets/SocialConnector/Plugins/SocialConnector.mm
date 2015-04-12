@@ -10,6 +10,8 @@
 #endif
 extern "C" {
 
+typedef void (*ActivityViewCompletionHandler)(char *activityType, bool completed);
+
 @interface SocialActivity : UIActivity
 - (id)initWithTitle:(NSString *)title scheme:(NSString *)scheme imageName:(NSString *)imageName action:(id)myblock;
 - (BOOL)isInstalled;
@@ -57,7 +59,6 @@ void *(^_myblock)(void);
 
 - (BOOL)canPerformWithActivityItems:(NSArray *)activityItems {
     return YES;
-
 }
 
 - (void)prepareWithActivityItems:(NSArray *)activityItems; {
@@ -80,7 +81,17 @@ void *(^_myblock)(void);
 }
 @end
 
-void SocialConnector_Share(const char *text, const char *url, const char *textureURL) {
+char* MakeStringCopy(const char* string)
+{
+    if (string == NULL)
+        return NULL;
+
+    char* res = (char*)malloc(strlen(string) + 1);
+    strcpy(res, string);
+    return res;
+}
+
+void SocialConnector_Share(const char *text, const char *url, const char *textureURL, ActivityViewCompletionHandler callback) {
 
     NSString *_text = [NSString stringWithUTF8String:text ? text : ""];
     NSString *_url = [NSString stringWithUTF8String:url ? url : ""];
@@ -128,17 +139,21 @@ void SocialConnector_Share(const char *text, const char *url, const char *textur
     }] autorelease];
 
     NSArray *myItems = [NSArray arrayWithObjects:nil, nil];
-    
+
     if (social.isInstalled) {
         myItems = [myItems arrayByAddingObject:social];
     }
-    
+
     UIActivityViewController *activityView = [[[UIActivityViewController alloc] initWithActivityItems:actItems applicationActivities:myItems] autorelease];
+
+
+    activityView.completionHandler = ^(NSString *activityType, BOOL completed){
+        callback(MakeStringCopy([activityType UTF8String]), completed);
+    };
 
     if(floorf(NSFoundationVersionNumber) > NSFoundationVersionNumber_iOS_7_1)
         activityView.popoverPresentationController.sourceView = UnityGetGLViewController().view;
 
     [UnityGetGLViewController() presentViewController:activityView animated:YES completion:nil];
 }
-
 }
